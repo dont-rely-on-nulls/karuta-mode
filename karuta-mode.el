@@ -156,28 +156,36 @@ expression is found."
 `%' begins a line comment.  `#%' begins an *expression comment*: it
 comments out the single expression that follows it (see the Karuta
 manual).  The expression is marked as a comment using generic comment
-fences so that motion and font-lock treat it uniformly."
+fences so that motion and font-lock treat it uniformly.
+
+The buffer is scanned strictly left-to-right and point is always advanced
+past each construct we recognize, so we never need to consult
+`syntax-ppss' (calling it from within a `syntax-propertize-function'
+re-enters propertization and can hang Emacs)."
   (goto-char start)
   (while (re-search-forward "#%\\|%" end t)
     (let ((mb (match-beginning 0)))
       (cond
-       ;; `#%' expression comment
+       ;; `#%' expression comment: fence off the following expression.
        ((eq (char-after mb) ?#)
-        (unless (nth 8 (syntax-ppss mb))
-          (let ((expr-end (karuta--expr-end (match-end 0))))
-            (when (> expr-end (match-end 0))
-              ;; opening fence on `#'
-              (put-text-property mb (1+ mb)
-                                 'syntax-table (string-to-syntax "!"))
-              ;; closing fence on the last char of the expression
-              (put-text-property (1- expr-end) expr-end
-                                 'syntax-table (string-to-syntax "!"))
-              (goto-char expr-end)))))
-       ;; `%' line comment
+        (let ((expr-end (karuta--expr-end (match-end 0))))
+          (if (> expr-end (match-end 0))
+              (progn
+                ;; opening fence on `#'
+                (put-text-property mb (1+ mb)
+                                   'syntax-table (string-to-syntax "!"))
+                ;; closing fence on the last char of the expression
+                (put-text-property (1- expr-end) expr-end
+                                   'syntax-table (string-to-syntax "!"))
+                (goto-char expr-end))
+            ;; No expression follows; point is already past `#%'.
+            nil)))
+       ;; `%' line comment: mark the start and skip the rest of the line,
+       ;; so any `%' or `#%' inside the comment is left untouched.
        (t
-        (unless (nth 8 (syntax-ppss mb))
-          (put-text-property mb (1+ mb)
-                             'syntax-table (string-to-syntax "<"))))))))
+        (put-text-property mb (1+ mb)
+                           'syntax-table (string-to-syntax "<"))
+        (goto-char (line-end-position)))))))
 
 (defun karuta-syntactic-face-function (state)
   "Return the face for the syntactic construct described by STATE."
