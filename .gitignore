@@ -1,0 +1,12 @@
+# Byte-compiled Emacs Lisp
+*.elc
+
+# Autoload / package files generated on install
+karuta-mode-autoloads.el
+karuta-mode-pkg.el
+
+# Editor / OS cruft
+*~
+\#*\#
+.\#*
+.DS_Store
