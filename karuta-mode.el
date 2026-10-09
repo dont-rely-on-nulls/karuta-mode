@@ -67,7 +67,8 @@ which, out of the box, expands to `karuta compile source'."
 
 (defconst karuta-keywords
   '("module" "signature" "project" "comment" "sakura"
-    "persisted" "ephemeral" "constraint" "import" "karuta")
+    "persisted" "ephemeral" "constraint" "import" "karuta"
+    "begin" "end")
   "Words that are highlighted with `karuta-keyword-face'.")
 
 ;;;; Syntax table
