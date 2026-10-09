@@ -214,9 +214,17 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
           (throw 'done t))))
     nil))
 
+(defun karuta--quoted-atom-face ()
+  (save-excursion
+    (goto-char (match-end 0))
+    (message "looking at %d" (point))
+    (cond ((looking-at-p ":[a-z']") 'karuta-module-qualifier-face)
+          ((looking-at-p "[[(]") 'karuta-predicate-face)
+          (t 'karuta-atom-face))))
+
 (defvar karuta-font-lock-keywords
   `(;; Quoted atoms: 'like this'.
-    ("'[^'\n]*'" 0 'karuta-quoted-atom-face)
+    ("'[^'\n]*'" 0 (karuta--quoted-atom-face))
     ;; Special keywords (module, signature, import, karuta, ...).
     (,(concat "\\_<" (regexp-opt karuta-keywords t) "\\_>")
      1 'karuta-keyword-face)
@@ -229,8 +237,6 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
                              (2 'karuta-module-qualifier-face))
     ;; Variables: X, Out, _Tail, _.
     ("\\_<\\([A-Z_][a-zA-Z0-9_]*\\)\\_>" 1 'karuta-variable-face)
-    ;; Integers (incl. negatives): 5, -1.
-    ("\\(-?[0-9]+\\)" 1 'karuta-number-face)
     ;; Predicate / functor names: an atom directly applied to arguments.
     ("\\([a-z][a-zA-Z0-9_-]*\\)[[(]" 1 'karuta-predicate-face)
     ;; Range operator `..'.
@@ -242,11 +248,10 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
     ;; Separators.
     ("\\([,|]\\)" 1 'karuta-operator-face)
     ;; Remaining plain atoms (constants like nil, debug, this).
-    ("\\_<\\([a-z][a-zA-Z0-9_-]*\\)\\_>" 1 'karuta-atom-face))
-  "Font-lock rules for `karuta-mode'.
-Ordered from most to least specific: earlier rules win, because each rule
-uses the default nil OVERRIDE and therefore only fontifies text that has
-not already been colored.")
+    ("\\_<\\([a-z][a-zA-Z0-9_-]*\\)\\_>" 1 'karuta-atom-face)
+    ;; Integers (incl. negatives): 5, -1.
+    ("\\(-?[0-9]+\\)" 1 'karuta-number-face))
+  "Font-lock rules for `karuta-mode'.")
 
 ;;;; Indentation
 
