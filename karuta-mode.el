@@ -216,10 +216,7 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
     nil))
 
 (defvar karuta-font-lock-keywords
-  `(;; Sakura database relations: @name (possibly qualified).
-    ("\\(@[a-z][a-zA-Z0-9_-]*\\(?:[:.][a-z][a-zA-Z0-9_-]*\\)*\\)"
-     1 'karuta-sakura-relation-face)
-    ;; Quoted atoms: 'like this'.
+  `(;; Quoted atoms: 'like this'.
     ("'[^'\n]*'" 0 'karuta-quoted-atom-face)
     ;; Special keywords (module, signature, import, karuta, ...).
     (,(concat "\\_<" (regexp-opt karuta-keywords t) "\\_>")
