@@ -34,11 +34,6 @@
   "Face for plain atoms used as constants (not applied to arguments)."
   :group 'karuta-faces)
 
-(defface karuta-quoted-atom-face
-  '((t (:inherit font-lock-function-name-face)))
-  "Face for quoted atoms, e.g. \\='factorial loop\\='."
-  :group 'karuta-faces)
-
 (defface karuta-variable-face
   '((t (:inherit font-lock-variable-name-face)))
   "Face for logic variables, e.g. X, Out, NewAcc, _."
