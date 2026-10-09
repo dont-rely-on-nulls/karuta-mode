@@ -202,8 +202,8 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
 `factorial.factorial'.  Careful not to match the neck operator `:-'."
   (catch 'done
     (while (re-search-forward
-            "\\_<\\([a-z][a-zA-Z0-9_-]*\\)\\([:.]\\)" limit t)
-      (let ((sep (char-before))          ; the `:' or `.'
+            "\\_<\\([a-z][a-zA-Z0-9_-]*\\)\\(:\\)" limit t)
+      (let ((sep (char-before))           ; the `:'
             (after (char-after)))         ; first char of the next segment
         ;; A real qualifier is followed by another atom or quoted atom;
         ;; this rules out the neck `:-' and clause-terminating `.'.
@@ -232,7 +232,7 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
     ("\\(:-\\)" 1 'karuta-neck-face)
     ;; Query terminator `?'.
     ("\\(\\?\\)" 1 'karuta-query-face)
-    ;; Module qualifiers: the `foo' and separator in `foo:bar' / `foo.bar'.
+    ;; Module qualifiers: the `foo' and separator in `foo:bar'
     (karuta--match-qualifier (1 'karuta-module-qualifier-face)
                              (2 'karuta-module-qualifier-face))
     ;; Variables: X, Out, _Tail, _.
