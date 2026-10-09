@@ -217,7 +217,6 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
 (defun karuta--quoted-atom-face ()
   (save-excursion
     (goto-char (match-end 0))
-    (message "looking at %d" (point))
     (cond ((looking-at-p ":[a-z']") 'karuta-module-qualifier-face)
           ((looking-at-p "[[(]") 'karuta-predicate-face)
           (t 'karuta-atom-face))))
