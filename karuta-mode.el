@@ -57,9 +57,8 @@ which, out of the box, expands to `karuta compile source'."
   :type 'string
   :group 'karuta)
 
-(defcustom karuta-indent-offset 3
-  "Number of columns for each level of indentation.
-Three matches the indentation used throughout the Karuta examples."
+(defcustom karuta-indent-offset 2
+  "Number of columns for each level of indentation."
   :type 'integer
   :safe #'integerp
   :group 'karuta)
