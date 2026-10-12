@@ -49,9 +49,9 @@
   "Face for comments (`%' line comments and `#%' expression comments)."
   :group 'karuta-faces)
 
-(defface karuta-neck-face
+(defface karuta-arrow-face
   '((t (:inherit font-lock-operator-face)))
-  "Face for the neck operator `:-' (\"holds\")."
+  "Face for the arrow operator `:-' (\"holds\")."
   :group 'karuta-faces)
 
 (defface karuta-query-face

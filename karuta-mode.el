@@ -190,8 +190,8 @@ re-enters propertization and can hang Emacs)."
 (defun karuta-syntactic-face-function (state)
   "Return the face for the syntactic construct described by STATE."
   (cond
-   ((nth 3 state) 'karuta-quoted-atom-face) ; (unused: quoted atoms via keywords)
-   ((nth 4 state) 'karuta-comment-face)     ; any comment
+   ((nth 3 state) 'karuta-atom-face)    ; (unused: quoted atoms via keywords)
+   ((nth 4 state) 'karuta-comment-face) ; any comment
    (t nil)))
 
 ;;;; Font lock
@@ -200,14 +200,14 @@ re-enters propertization and can hang Emacs)."
   "Font-lock matcher for a module qualifier segment `atom:' before LIMIT.
 Matches the atom (group 1) and the separator (group 2) of a qualified
 name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
-`factorial.factorial'.  Careful not to match the neck operator `:-'."
+`factorial.factorial'.  Careful not to match the arrow operator `:-'."
   (catch 'done
     (while (re-search-forward
             "\\_<\\([a-z][a-zA-Z0-9_-]*\\)\\(:\\)" limit t)
       (let ((sep (char-before))           ; the `:'
             (after (char-after)))         ; first char of the next segment
         ;; A real qualifier is followed by another atom or quoted atom;
-        ;; this rules out the neck `:-' and clause-terminating `.'.
+        ;; this rules out the arrow `:-' and clause-terminating `.'.
         (when (and after
                    (or (and (>= after ?a) (<= after ?z))
                        (eq after ?\')))
@@ -228,8 +228,8 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
     ;; Special keywords (module, signature, import, karuta, ...).
     (,(concat "\\_<" (regexp-opt karuta-keywords t) "\\_>")
      1 'karuta-keyword-face)
-    ;; Neck operator `:-'.
-    ("\\(:-\\)" 1 'karuta-neck-face)
+    ;; Arrow operator `:-'.
+    ("\\(:-\\)" 1 'karuta-arrow-face)
     ;; Query terminator `?'.
     ("\\(\\?\\)" 1 'karuta-query-face)
     ;; Module qualifiers: the `foo' and separator in `foo:bar'
@@ -284,7 +284,7 @@ there is no previous code line."
 
 (defun karuta--prev-line-continues-p ()
   "Return non-nil when the previous code line leaves a clause open.
-That is, it ends with the neck `:-' or a conjunction comma `,'."
+That is, it ends with the arrow `:-' or a conjunction comma `,'."
   (let ((end (karuta--prev-code-end)))
     (when end
       (let ((c (char-before end)))
