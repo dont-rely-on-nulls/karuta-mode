@@ -1,6 +1,7 @@
 ;;; karuta-mode.el --- Major mode for the Karuta programming language -*- lexical-binding: t; -*-
 
 ;; Author: Marcos Magueta <maguetamarcos@gmail.com>
+;; 	Estevan Castilho <tevo@riajuu.net>
 ;; URL: https://github.com/dont-rely-on-nulls/karuta
 ;; Version: 0.1.0
 ;; Package-Requires: ((emacs "27.1"))
