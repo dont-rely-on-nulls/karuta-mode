@@ -128,16 +128,30 @@ expression is found."
         (karuta--skip-balanced (point)))
        (t start)))))
 
-(defun karuta-syntax-propertize-function (start end)
-  (message "start: %s, end: %s" start end)
-  (funcall (syntax-propertize-rules
-            ;; Disallow strings spanning multiple lines
-            ("\\(\"\\)\\(?:[^\"\n]*\\)\\(\n\\)" (1 "|") (2 "|"))
-            ("\\(\"\\)\\(?:[^\"\n]*\\)\\(\"\\)" (1 "\"") (2 "\""))
-            ;; Ditto for atoms
-            ("\\('\\)\\(?:[^'\n]*\\)\\(\n\\)" (1 "|") (2 "|"))
-            ("\\('\\)\\(?:[^'\n]*\\)\\('\\)" (1 "\"") (2 "\"")))
-           start end))
+(defun karuta--expression-end (start)
+  (save-excursion
+    (goto-char start)
+    (forward-sexp)
+    (when (looking-at "[[(]")
+      (forward-sexp))
+    (1- (point))))
+
+(defun karuta--propertize-expression-comment ()
+  (let ((start (match-beginning 0))
+        (end (karuta--expression-end (match-end 0))))
+    (put-text-property start (1+ start) 'syntax-table (string-to-syntax "!"))
+    (put-text-property end (1+ end) 'syntax-table (string-to-syntax "!"))))
+
+(defalias 'karuta-syntax-propertize-function
+  (syntax-propertize-rules
+   ;; Disallow strings spanning multiple lines
+   ("\\(\"\\)\\(?:[^\"\n]*\\)\\(\n\\)" (1 "|") (2 "|"))
+   ("\\(\"\\)\\(?:[^\"\n]*\\)\\(\"\\)" (1 "\"") (2 "\""))
+   ;; Ditto for atoms
+   ("\\('\\)\\(?:[^'\n]*\\)\\(\n\\)" (1 "|") (2 "|"))
+   ("\\('\\)\\(?:[^'\n]*\\)\\('\\)" (1 "\"") (2 "\""))
+   ;; Expression comments
+   ("#%" (0 (karuta--propertize-expression-comment)))))
 
 (defun karuta--quoted-atom-face (start)
   (save-excursion
