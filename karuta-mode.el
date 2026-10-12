@@ -12,23 +12,6 @@
 ;; and Sakura database files (`.skr').  Karuta is a relational, aiming to
 ;; be constraint-based, programming language; the two file formats share
 ;; the same surface syntax but differ in semantics.
-;;
-;; This first release focuses on a colorful, syntax highlighting theme
-;; based on the different morphological categories of Karuta (see
-;; `karuta-faces.el'), reasonable indentation, and a `compile'
-;; integration that defaults to `karuta compile <file>'.
-;;
-;; The package is intentionally split into small units so it can grow:
-;;
-;;   karuta-faces.el   -- faces, one per morphological category.
-;;   karuta-mode.el    -- syntax table, font-lock, indentation, compile.
-;;
-;; Planned extension points, none of which require touching the core:
-;;
-;;   * LSP: add a `karuta-lsp.el' registering the server with `eglot' or
-;;     `lsp-mode'; hook it from `karuta-mode-hook'.
-;;   * REPL: add a `karuta-repl.el' (a `comint' derivative).
-;;   * Flymake/flycheck: wire the compiler diagnostics into a backend.
 
 ;;; Code:
 
