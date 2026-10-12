@@ -44,6 +44,11 @@
   "Face for integer literals."
   :group 'karuta-faces)
 
+(defface karuta-string-face
+  '((t (:inherit font-lock-string-face)))
+  "Face for string literals."
+  :group 'karuta-faces)
+
 (defface karuta-comment-face
   '((t (:inherit font-lock-comment-face)))
   "Face for comments (`%' line comments and `#%' expression comments)."

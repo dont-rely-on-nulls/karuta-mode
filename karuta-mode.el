@@ -16,6 +16,7 @@
 ;;; Code:
 
 (require 'karuta-faces)
+(require 'cl-lib)
 
 (defgroup karuta nil
   "Major mode for the Karuta programming language."
@@ -69,24 +70,19 @@ which, out of the box, expands to `karuta compile source'."
     (modify-syntax-entry ?\) ")(" table)
     (modify-syntax-entry ?\{ "(}" table)
     (modify-syntax-entry ?\} "){" table)
-    ;; Comments.  `%' line comments and `#%' expression comments share the
-    ;; `%' character, so their comment syntax is applied contextually by
-    ;; `karuta-syntax-propertize-function' rather than statically here.  We
-    ;; only need to declare that a newline closes a `%' line comment.
+    ;; Comments
     (modify-syntax-entry ?\n ">" table)
-    ;; Punctuation.
-    (modify-syntax-entry ?% "." table)
-    (modify-syntax-entry ?# "." table)
+    (modify-syntax-entry ?% "<" table)
+    (modify-syntax-entry ?# "." table) ; see `karuta-syntax-propertize-function'
+    ;; Punctuation
     (modify-syntax-entry ?, "." table)
     (modify-syntax-entry ?. "." table)
     (modify-syntax-entry ?| "." table)
     (modify-syntax-entry ?: "." table)
     (modify-syntax-entry ?? "." table)
     (modify-syntax-entry ?@ "." table)
-    ;; Quoted atoms are highlighted via font-lock rather than string
-    ;; syntax, so that they get their own dedicated face; keep `'' as
-    ;; punctuation here.
-    (modify-syntax-entry ?\' "." table)
+    (modify-syntax-entry ?\' "\"" table)
+    (modify-syntax-entry ?\" "\"" table)
     table)
   "Syntax table for `karuta-mode'.")
 
@@ -132,50 +128,33 @@ expression is found."
         (karuta--skip-balanced (point)))
        (t start)))))
 
-;;;; Contextual comment propertization
-
 (defun karuta-syntax-propertize-function (start end)
-  "Apply comment syntax between START and END.
-`%' begins a line comment.  `#%' begins an *expression comment*: it
-comments out the single expression that follows it (see the Karuta
-manual).  The expression is marked as a comment using generic comment
-fences so that motion and font-lock treat it uniformly.
+  (message "start: %s, end: %s" start end)
+  (funcall (syntax-propertize-rules
+            ;; Disallow strings spanning multiple lines
+            ("\\(\"\\)\\(?:[^\"\n]*\\)\\(\n\\)" (1 "|") (2 "|"))
+            ("\\(\"\\)\\(?:[^\"\n]*\\)\\(\"\\)" (1 "\"") (2 "\""))
+            ;; Ditto for atoms
+            ("\\('\\)\\(?:[^'\n]*\\)\\(\n\\)" (1 "|") (2 "|"))
+            ("\\('\\)\\(?:[^'\n]*\\)\\('\\)" (1 "\"") (2 "\"")))
+           start end))
 
-The buffer is scanned strictly left-to-right and point is always advanced
-past each construct we recognize, so we never need to consult
-`syntax-ppss' (calling it from within a `syntax-propertize-function'
-re-enters propertization and can hang Emacs)."
-  (goto-char start)
-  (while (re-search-forward "#%\\|%" end t)
-    (let ((mb (match-beginning 0)))
-      (cond
-       ;; `#%' expression comment: fence off the following expression.
-       ((eq (char-after mb) ?#)
-        (let ((expr-end (karuta--expr-end (match-end 0))))
-          (if (> expr-end (match-end 0))
-              (progn
-                ;; opening fence on `#'
-                (put-text-property mb (1+ mb)
-                                   'syntax-table (string-to-syntax "!"))
-                ;; closing fence on the last char of the expression
-                (put-text-property (1- expr-end) expr-end
-                                   'syntax-table (string-to-syntax "!"))
-                (goto-char expr-end))
-            ;; No expression follows; point is already past `#%'.
-            nil)))
-       ;; `%' line comment: mark the start and skip the rest of the line,
-       ;; so any `%' or `#%' inside the comment is left untouched.
-       (t
-        (put-text-property mb (1+ mb)
-                           'syntax-table (string-to-syntax "<"))
-        (goto-char (line-end-position)))))))
+(defun karuta--quoted-atom-face (start)
+  (save-excursion
+    (goto-char start)
+    (cond ((looking-at-p ":[a-z']") 'karuta-module-qualifier-face)
+          ((looking-at-p "[[(]") 'karuta-predicate-face)
+          (t 'karuta-atom-face))))
 
 (defun karuta-syntactic-face-function (state)
   "Return the face for the syntactic construct described by STATE."
-  (cond
-   ((nth 3 state) 'karuta-atom-face)    ; (unused: quoted atoms via keywords)
-   ((nth 4 state) 'karuta-comment-face) ; any comment
-   (t nil)))
+  (cl-destructuring-bind (_0 _1 _2 string? comment? _5 _6 _7 s-or-c-start &rest _
+                             &aux (starts-with (when s-or-c-start (char-after s-or-c-start)))) state
+    (declare (ignore _0 _1 _2 _5 _6 _7 _))
+    (cond ((and string? (eql ?\' starts-with)) (karuta--quoted-atom-face s-or-c-start))
+          (string? 'karuta-string-face)
+          (comment? 'karuta-comment-face)
+          (t nil))))
 
 ;;;; Font lock
 
@@ -198,17 +177,8 @@ name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
           (throw 'done t))))
     nil))
 
-(defun karuta--quoted-atom-face ()
-  (save-excursion
-    (goto-char (match-end 0))
-    (cond ((looking-at-p ":[a-z']") 'karuta-module-qualifier-face)
-          ((looking-at-p "[[(]") 'karuta-predicate-face)
-          (t 'karuta-atom-face))))
-
 (defvar karuta-font-lock-keywords
-  `(;; Quoted atoms: 'like this'.
-    ("'[^'\n]*'" 0 (karuta--quoted-atom-face))
-    ;; Special keywords (module, signature, import, karuta, ...).
+  `(;; Special keywords (module, signature, import, karuta, ...).
     (,(concat "\\_<" (regexp-opt karuta-keywords t) "\\_>")
      1 'karuta-keyword-face)
     ;; Arrow operator `:-'.
