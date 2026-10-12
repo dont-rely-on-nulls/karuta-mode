@@ -173,10 +173,10 @@ expression is found."
 ;;;; Font lock
 
 (defun karuta--match-qualifier (limit)
-  "Font-lock matcher for a module qualifier segment `atom:' before LIMIT.
-Matches the atom (group 1) and the separator (group 2) of a qualified
-name such as `karuta:', `a:' in `a:b:pluz', or `factorial.' in
-`factorial.factorial'.  Careful not to match the arrow operator `:-'."
+  "Font-lock matcher for a module qualifier segment `atom:' before
+LIMIT.  Matches the atom (group 1) and the separator (group 2) of a
+qualified name such as `karuta:', `a:' in `a:b:pluz'.  Careful not to
+match the arrow operator `:-'."
   (catch 'done
     (while (re-search-forward
             "\\_<\\([a-z][a-zA-Z0-9_-]*\\)\\(:\\)" limit t)
