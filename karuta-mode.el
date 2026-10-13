@@ -87,48 +87,6 @@ which, out of the box, expands to `karuta compile source'."
     table)
   "Syntax table for `karuta-mode'.")
 
-;;;; Expression scanning (shared by `#%' comments and, later, motion)
-
-(defun karuta--skip-balanced (pos)
-  "Return the position after the balanced bracket group starting at POS.
-Fall back to end of line when the group is unbalanced."
-  (or (ignore-errors (scan-sexps pos 1))
-      (save-excursion (goto-char pos) (line-end-position))))
-
-(defun karuta--expr-end (pos)
-  "Return the end position of the Karuta expression starting at POS.
-POS is expected to sit just after a `#%' marker; leading whitespace is
-skipped.  Handles integers, variables, atoms/quoted-atoms optionally
-applied to a balanced argument list, and bare lists.  Returns POS when no
-expression is found."
-  (save-excursion
-    (goto-char pos)
-    (skip-chars-forward " \t\r\n")
-    (let ((start (point)))
-      (cond
-       ;; integer
-       ((looking-at "-?[0-9]+")
-        (match-end 0))
-       ;; variable
-       ((looking-at "[A-Z_][a-zA-Z0-9_]*")
-        (match-end 0))
-       ;; quoted atom, optionally a functor
-       ((looking-at "'\\(?:[^'\n]\\)*'")
-        (goto-char (match-end 0))
-        (if (memq (char-after) '(?\[ ?\())
-            (karuta--skip-balanced (point))
-          (point)))
-       ;; atom, optionally qualified, optionally a functor
-       ((looking-at "[a-z][a-zA-Z0-9_-]*\\(?:[:.][a-z][a-zA-Z0-9_-]*\\)*")
-        (goto-char (match-end 0))
-        (if (memq (char-after) '(?\[ ?\())
-            (karuta--skip-balanced (point))
-          (point)))
-       ;; bare list
-       ((eq (char-after) ?\[)
-        (karuta--skip-balanced (point)))
-       (t start)))))
-
 (defun karuta--expression-end (start)
   (save-excursion
     (goto-char start)
