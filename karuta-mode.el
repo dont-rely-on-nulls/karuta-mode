@@ -116,8 +116,7 @@ which, out of the box, expands to `karuta compile source'."
   (save-excursion
     (goto-char start)
     (forward-sexp)
-    (cond ((looking-at-p ":[a-z']") 'karuta-module-qualifier-face)
-          ((looking-at-p "[[(]") 'karuta-predicate-face)
+    (cond ((looking-at-p "[[(]") 'karuta-predicate-face)
           (t 'karuta-atom-face))))
 
 (defun karuta-syntactic-face-function (state)
