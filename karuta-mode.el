@@ -157,6 +157,7 @@ expression is found."
 (defun karuta--quoted-atom-face (start)
   (save-excursion
     (goto-char start)
+    (forward-sexp)
     (cond ((looking-at-p ":[a-z']") 'karuta-module-qualifier-face)
           ((looking-at-p "[[(]") 'karuta-predicate-face)
           (t 'karuta-atom-face))))
