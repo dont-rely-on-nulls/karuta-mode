@@ -72,8 +72,7 @@ which, out of the box, expands to `karuta compile source'."
     (modify-syntax-entry ?\{ "(}" table)
     (modify-syntax-entry ?\} "){" table)
     ;; Comments
-    (modify-syntax-entry ?\n ">" table)
-    (modify-syntax-entry ?% "<" table)
+    (modify-syntax-entry ?\n ">" table) ; see `karuta-syntax-propertize-function' for %
     (modify-syntax-entry ?# "." table) ; see `karuta-syntax-propertize-function'
     ;; Punctuation
     (modify-syntax-entry ?, "." table)
@@ -91,15 +90,22 @@ which, out of the box, expands to `karuta compile source'."
   (save-excursion
     (goto-char start)
     (forward-sexp)
+    (while (looking-at ":")
+      (forward-sexp))
     (when (looking-at "[[(]")
       (forward-sexp))
     (1- (point))))
 
+(defun karuta--inside-comment-p (pos)
+  (save-excursion
+    (nth 4 (parse-partial-sexp (point-min) pos))))
+
 (defun karuta--propertize-expression-comment ()
   (let ((start (match-beginning 0))
         (end (karuta--expression-end (match-end 0))))
-    (put-text-property start (1+ start) 'syntax-table (string-to-syntax "!"))
-    (put-text-property end (1+ end) 'syntax-table (string-to-syntax "!"))))
+    (unless (karuta--inside-comment-p start)
+      (put-text-property start (1+ start) 'syntax-table (string-to-syntax "!"))
+      (put-text-property end (1+ end) 'syntax-table (string-to-syntax "!")))))
 
 (defun karuta--propertize-dot ()
   (condition-case nil
@@ -116,10 +122,11 @@ which, out of the box, expands to `karuta compile source'."
    ;; Ditto for atoms
    ("\\('\\)\\(?:[^'\n]*\\)\\(\n\\)" (1 "|") (2 "|"))
    ("\\('\\)\\(?:[^'\n]*\\)\\('\\)" (1 "\"") (2 "\""))
-   ;;
+   ;; Arrow and dot
    ("\\(:\\)-" (1 "(."))
    ("\\." (0 (karuta--propertize-dot)))
-   ;; Expression comments
+   ;; Comments
+   ("[^#]\\(%\\)" (1 "<"))
    ("#%" (0 (karuta--propertize-expression-comment)))))
 
 (defun karuta--quoted-atom-face (start)
@@ -198,9 +205,9 @@ match the arrow operator `:-'."
        (beginning-of-line)
        (let ((level (car (syntax-ppss (point)))))
          (back-to-indentation)
-         (cl-case (syntax-class (syntax-after (point)))
-           ((4 5) (1- level))
-           (t level))))))
+         (if (or (eql 5 (syntax-class (syntax-after (point)))) (looking-at "{"))
+             (1- level)
+           level)))))
 
 (defun karuta-indent-line ()
   "Indent the current line as Karuta code."
