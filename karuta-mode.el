@@ -77,7 +77,7 @@ which, out of the box, expands to `karuta compile source'."
     (modify-syntax-entry ?# "." table) ; see `karuta-syntax-propertize-function'
     ;; Punctuation
     (modify-syntax-entry ?, "." table)
-    (modify-syntax-entry ?. "." table)
+    (modify-syntax-entry ?. "." table) ; see `karuta-syntax-propertize-function'
     (modify-syntax-entry ?| "." table)
     (modify-syntax-entry ?: "." table)
     (modify-syntax-entry ?? "." table)
@@ -101,6 +101,13 @@ which, out of the box, expands to `karuta compile source'."
     (put-text-property start (1+ start) 'syntax-table (string-to-syntax "!"))
     (put-text-property end (1+ end) 'syntax-table (string-to-syntax "!"))))
 
+(defun karuta--propertize-dot ()
+  (condition-case nil
+      (save-excursion
+        (goto-char (scan-lists (match-beginning 0) -1 1))
+        (string-to-syntax (if (looking-at ":-") ")" ".")))
+    (scan-error (string-to-syntax "."))))
+
 (defalias 'karuta-syntax-propertize-function
   (syntax-propertize-rules
    ;; Disallow strings spanning multiple lines
@@ -109,6 +116,9 @@ which, out of the box, expands to `karuta compile source'."
    ;; Ditto for atoms
    ("\\('\\)\\(?:[^'\n]*\\)\\(\n\\)" (1 "|") (2 "|"))
    ("\\('\\)\\(?:[^'\n]*\\)\\('\\)" (1 "\"") (2 "\""))
+   ;;
+   ("\\(:\\)-" (1 "(."))
+   ("\\." (0 (karuta--propertize-dot)))
    ;; Expression comments
    ("#%" (0 (karuta--propertize-expression-comment)))))
 
@@ -136,6 +146,7 @@ which, out of the box, expands to `karuta compile source'."
 LIMIT.  Matches the atom (group 1) and the separator (group 2) of a
 qualified name such as `karuta:', `a:' in `a:b:pluz'.  Careful not to
 match the arrow operator `:-'."
+  ;; TODO drop the regex in favour of using the syntax table
   (catch 'done
     (while (re-search-forward
             "\\_<\\([a-z][a-zA-Z0-9_-]*\\)\\(:\\)" limit t)
@@ -181,58 +192,15 @@ match the arrow operator `:-'."
 
 ;;;; Indentation
 
-(defun karuta--prev-code-end ()
-  "Return the position after the last code char on the previous nonblank line.
-Trailing whitespace and `%' line comments are ignored.  Returns nil when
-there is no previous code line."
-  (save-excursion
-    (beginning-of-line)
-    (if (bobp)
-        nil
-      (forward-line -1)
-      (while (and (not (bobp)) (looking-at "[ \t]*$"))
-        (forward-line -1))
-      (if (looking-at "[ \t]*$")
-          nil
-        (let ((bol (line-beginning-position))
-              (eol (line-end-position))
-              (code-end nil))
-          (goto-char bol)
-          ;; Walk forward; stop at the first `%' that opens a comment.
-          (setq code-end eol)
-          (while (re-search-forward "%" eol t)
-            (when (nth 4 (syntax-ppss (point)))
-              (setq code-end (1- (point)))
-              (goto-char eol)))
-          (goto-char code-end)
-          (skip-chars-backward " \t")
-          (and (> (point) bol) (point)))))))
-
-(defun karuta--prev-line-continues-p ()
-  "Return non-nil when the previous code line leaves a clause open.
-That is, it ends with the arrow `:-' or a conjunction comma `,'."
-  (let ((end (karuta--prev-code-end)))
-    (when end
-      (let ((c (char-before end)))
-        (or (eq c ?,)
-            (and (eq c ?-)
-                 (eq (char-before (1- end)) ?:)))))))
-
 (defun karuta--calculate-indent ()
-  "Compute the indentation column for the current line."
-  (save-excursion
-    (beginning-of-line)
-    (let* ((ppss (syntax-ppss (point)))
-           (depth (car ppss))
-           (base (* karuta-indent-offset (max 0 depth))))
-      (cond
-       ;; A line that opens with a closing bracket/brace dedents one level.
-       ((looking-at "[ \t]*[]})]")
-        (max 0 (- base karuta-indent-offset)))
-       ;; Continuation of a clause body gets one extra level.
-       ((karuta--prev-line-continues-p)
-        (+ base karuta-indent-offset))
-       (t base)))))
+  (* karuta-indent-offset
+     (save-excursion
+       (beginning-of-line)
+       (let ((level (car (syntax-ppss (point)))))
+         (back-to-indentation)
+         (cl-case (syntax-class (syntax-after (point)))
+           ((4 5) (1- level))
+           (t level))))))
 
 (defun karuta-indent-line ()
   "Indent the current line as Karuta code."
