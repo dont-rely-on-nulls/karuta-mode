@@ -87,14 +87,16 @@ which, out of the box, expands to `karuta compile source'."
   "Syntax table for `karuta-mode'.")
 
 (defun karuta--expression-end (start)
-  (save-excursion
-    (goto-char start)
-    (forward-sexp)
-    (while (looking-at ":")
-      (forward-sexp))
-    (when (looking-at "[[(]")
-      (forward-sexp))
-    (1- (point))))
+  (condition-case nil
+      (save-excursion
+        (goto-char start)
+        (forward-sexp)
+        (while (looking-at ":")
+          (forward-sexp))
+        (when (looking-at "[[(]")
+          (forward-sexp))
+        (1- (point)))
+    (scan-error (point-max))))
 
 (defun karuta--inside-comment-p (pos)
   (save-excursion
