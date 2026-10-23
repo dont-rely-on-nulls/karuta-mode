@@ -72,7 +72,8 @@ which, out of the box, expands to `karuta compile source'."
     (modify-syntax-entry ?\{ "(}" table)
     (modify-syntax-entry ?\} "){" table)
     ;; Comments
-    (modify-syntax-entry ?\n ">" table) ; see `karuta-syntax-propertize-function' for %
+    (modify-syntax-entry ?% "<" table)
+    (modify-syntax-entry ?\n ">" table)
     (modify-syntax-entry ?# "." table) ; see `karuta-syntax-propertize-function'
     ;; Punctuation
     (modify-syntax-entry ?, "." table)
@@ -126,7 +127,6 @@ which, out of the box, expands to `karuta compile source'."
    ("\\(:\\)-" (1 "(."))
    ("\\." (0 (karuta--propertize-dot)))
    ;; Comments
-   ("[^#]\\(%\\)" (1 "<"))
    ("#%" (0 (karuta--propertize-expression-comment)))))
 
 (defun karuta--quoted-atom-face (start)
