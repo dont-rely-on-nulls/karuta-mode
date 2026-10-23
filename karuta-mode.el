@@ -72,7 +72,6 @@ which, out of the box, expands to `karuta compile source'."
     (modify-syntax-entry ?\{ "(}" table)
     (modify-syntax-entry ?\} "){" table)
     ;; Comments
-    (modify-syntax-entry ?% "<" table)
     (modify-syntax-entry ?\n ">" table)
     (modify-syntax-entry ?# "." table) ; see `karuta-syntax-propertize-function'
     ;; Punctuation
@@ -108,6 +107,10 @@ which, out of the box, expands to `karuta compile source'."
       (put-text-property start (1+ start) 'syntax-table (string-to-syntax "!"))
       (put-text-property end (1+ end) 'syntax-table (string-to-syntax "!")))))
 
+(defun karuta--propertize-line-comment ()
+  (unless (eql ?# (char-before (match-beginning 0)))
+    (put-text-property (match-beginning 0) (match-end 0) 'syntax-table (string-to-syntax "<"))))
+
 (defun karuta--propertize-dot ()
   (condition-case nil
       (save-excursion
@@ -127,6 +130,13 @@ which, out of the box, expands to `karuta compile source'."
    ("\\(:\\)-" (1 "(."))
    ("\\." (0 (karuta--propertize-dot)))
    ;; Comments
+   ;; Line comments are highlighted using `syntax-propertize-function'
+   ;; rather than the syntax table because the syntax table properties
+   ;; are applied before this gets to run, which would mean that lines
+   ;; containing expression comments would be first read as containing
+   ;; line comments (due to the % on #%), which breaks skipping exprs,
+   ;; and, thus, `karuta--propertize-expression-comment'.
+   ("%" (0 (karuta--propertize-line-comment)))
    ("#%" (0 (karuta--propertize-expression-comment)))))
 
 (defun karuta--quoted-atom-face (start)
